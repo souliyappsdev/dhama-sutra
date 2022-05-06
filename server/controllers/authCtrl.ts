@@ -252,12 +252,12 @@ const authCtrl = {
       const url = `${CLIENT_URL}/reset_password/${access_token}`
 
       if(validPhone(account)){
-        sendSms(account, url, "Forgot password?")
-        return res.json({msg: "Success! Please check your phone."})
+        sendSms(account, url, "ລືມລະຫັດຜ່ານ?")
+        return res.json({msg: "ດຳເນີນການສຳເຫຼັດ! ກະລຸນາກວດເບິ່ງ ເບີໂທລະສັບ ຂອງທ່ານ."})
 
       }else if(validateEmail(account)){
-        sendMail(account, url, "Forgot password?")
-        return res.json({msg: "Success! Please check your email."})
+        sendMail(account, url, "ລືມລະຫັດຜ່ານ?")
+        return res.json({msg: "ດຳເນີນການສຳເຫຼັດ! ກະລຸນາກວດເບິ່ງ Email ຂອງທ່ານ."})
       }
 
     } catch (err: any) {

@@ -4,19 +4,19 @@ import { IUser } from '../config/interface'
 const userSchema = new mongoose.Schema({
   name: {
     type: String,
-    required: [true, "Please add your name"],
+    required: [true, "ກະລຸນາເພີ່ມຊື່ຂອງທ່ານ"],
     trim: true,
-    maxLength: [20, "Your name is up to 20 chars long."]
+    maxLength: [100, "ຊື່ຂອງທ່ານສູງສຸດເເມ່ນ 100 ຕົວອັກສອນ"],
   },
   account: {
     type: String,
-    required: [true, "Please add your email or phone"],
+    required: [true, "ກະລຸນາເພີ່ມ Email ຫຼື ເບີໂທ ຂອງທ່ານ "],
     trim: true,
     unique: true
   },
   password: {
     type: String,
-    required: [true, "Please add your password"]
+    required: [true, "ກະລຸນາເພີ່ມລະຫັດຜ່ານຂອງທ່ານ"],
   },
   avatar: {
     type: String,

@@ -7,8 +7,8 @@ export const validRegister = async (req: Request, res: Response, next: NextFunct
 
   if(!name){
     errors.push("Please add your name.")
-  }else if(name.length > 20){
-    errors.push("Your name is up to 20 chars long.")
+  }else if(name.length > 100){
+    errors.push("Your name is up to 100 chars long.")
   }
 
   if(!account){

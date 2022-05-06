@@ -15,7 +15,7 @@ const userCtrl = {
         avatar, name
       })
 
-      res.json({ msg: "Update Success!" })
+      res.json({ msg: "ເເກ້ໄຂສຳເລັດ!" })
     } catch (err: any) {
       return res.status(500).json({msg: err.message})
     }
