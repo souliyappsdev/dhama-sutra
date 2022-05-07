@@ -6,19 +6,19 @@ export const validRegister = async (req: Request, res: Response, next: NextFunct
   const errors = [];
 
   if(!name){
-    errors.push("Please add your name.")
+    errors.push("ກະລຸນາປ້ອນຊື່")
   }else if(name.length > 100){
     errors.push("Your name is up to 100 chars long.")
   }
 
   if(!account){
-    errors.push("Please add your email or phone number.")
+    errors.push("ກະລຸນາປ້ອນອີເມວ")
   }else if(!validPhone(account) && !validateEmail(account)){
     errors.push("Email or phone number format is incorrect.")
   }
 
   if(password.length < 6){
-    errors.push("Password must be at least 6 chars.")
+    errors.push("ກະລຸນາປ້ອນລະຫັດຜ່ານໃຫ້ເກີນກວ່າ 6 ໂຕ")
   }
 
   if(errors.length > 0) return res.status(400).json({msg: errors})
