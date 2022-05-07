@@ -21,7 +21,7 @@ const authCtrl = {
       const { name, account, password } = req.body
 
       const user = await Users.findOne({account})
-      if(user) return res.status(400).json({msg: 'Email or Phone number already exists.'})
+      if(user) return res.status(400).json({msg: 'ອີເມວມີຢູ່ໃນລະບົບເເລ້ວ.'})
 
       const passwordHash = await bcrypt.hash(password, 12)
 
@@ -32,8 +32,8 @@ const authCtrl = {
       const url = `${CLIENT_URL}/active/${active_token}`
 
       if(validateEmail(account)){
-        sendMail(account, url, "Verify your email address")
-        return res.json({ msg: "Success! Please check your email." })
+        sendMail(account, url, "ກະລຸນາຢືນຢັນອີເມວຂອງທ່ານ.")
+        return res.json({ msg: "ການດຳເນີນງານສຳເຫຼັດ! ກະລຸນາກວດເບິ່ງອີເມວຂອງທ່ານ." })
 
       }else if(validPhone(account)){
         sendSms(account, url, "Verify your phone number")
@@ -55,13 +55,13 @@ const authCtrl = {
       if(!newUser) return res.status(400).json({msg: "Invalid authentication."})
       
       const user = await Users.findOne({account: newUser.account})
-      if(user) return res.status(400).json({msg: "Account already exists."})
+      if(user) return res.status(400).json({msg: "ບັນຊີນີ້ມີຢູ່ເເລ້ວ."})
 
       const new_user = new Users(newUser)
 
       await new_user.save()
 
-      res.json({msg: "Account has been activated!"})
+      res.json({msg: "ເປີດໃຊ້ງານສຳເລັດ!"})
 
     } catch (err: any) {
       return res.status(500).json({msg: err.message})
@@ -72,7 +72,7 @@ const authCtrl = {
       const { account, password } = req.body
 
       const user = await Users.findOne({account})
-      if(!user) return res.status(400).json({msg: 'This account does not exits.'})
+      if(!user) return res.status(400).json({msg: 'ບັນຊີນີ້ບໍ່ມີໃນລະບົບ.'})
 
       // if user exists
       loginUser(user, password, res)
@@ -92,7 +92,7 @@ const authCtrl = {
         rf_token: ''
       })
 
-      return res.json({msg: "Logged out!"})
+      return res.json({msg: "ອອກສູ່ລະບົບເເລ້ວ!"})
 
     } catch (err: any) {
       return res.status(500).json({msg: err.message})
@@ -101,16 +101,16 @@ const authCtrl = {
   refreshToken: async(req: Request, res: Response) => {
     try {
       const rf_token = req.cookies.refreshtoken
-      if(!rf_token) return res.status(400).json({msg: "Please login now!"})
+      if(!rf_token) return res.status(400).json({msg: "ກະລຸນາເຂົ້າສູ່ລະບົບ!"})
 
       const decoded = <IDecodedToken>jwt.verify(rf_token, `${process.env.REFRESH_TOKEN_SECRET}`)
       if(!decoded.id) return res.status(400).json({msg: "Please login now!"})
 
       const user = await Users.findById(decoded.id).select("-password +rf_token")
-      if(!user) return res.status(400).json({msg: "This account does not exist."})
+      if(!user) return res.status(400).json({msg: "ບັນຊີນີ້ບໍ່ມີຢູ່ໃນລະບົບ."})
 
       if(rf_token !== user.rf_token)
-        return res.status(400).json({msg: "Please login now!"})
+        return res.status(400).json({msg: "ກະລຸນາເຂົ້າສູ່ລະບົບ!"})
 
       const access_token = generateAccessToken({id: user._id})
       const refresh_token = generateRefreshToken({id: user._id}, res)
@@ -137,9 +137,9 @@ const authCtrl = {
       } = <IGgPayload>verify.getPayload()
 
       if(!email_verified)
-        return res.status(500).json({msg: "Email verification failed."})
+        return res.status(500).json({msg: "ການຍືນຍັນລະຫັດຜ່ານລົ້ມເເຫຼວ"})
 
-      const password = email + 'your google secrect password'
+      const password = email + 'ລະຫັດຜ່ານ Google ເປັນຄວາມລັບປະຈຳຕົວ'
       const passwordHash = await bcrypt.hash(password, 12)
 
       const user = await Users.findOne({account: email})
@@ -240,11 +240,11 @@ const authCtrl = {
 
       const user = await Users.findOne({account})
       if(!user)
-        return res.status(400).json({msg: 'This account does not exist.'})
+        return res.status(400).json({msg: 'ບັນຊີນີ້ບໍ່ມີຢູ່ໃນລະບົບ.'})
 
       if(user.type !== 'register')
         return res.status(400).json({
-          msg: `Quick login account with ${user.type} can't use this function.`
+          msg: `ບັນຊີນີ້ເຂົ້າສູ່ລະບົບດ້ວຍ ${user.type} ບໍ່ສາມາດໃຊ້ງານຜ່ານໄດ້.`
         })
 
       const access_token = generateAccessToken({id: user._id})
@@ -257,7 +257,7 @@ const authCtrl = {
 
       }else if(validateEmail(account)){
         sendMail(account, url, "ລືມລະຫັດຜ່ານ?")
-        return res.json({msg: "ດຳເນີນການສຳເຫຼັດ! ກະລຸນາກວດເບິ່ງ Email ຂອງທ່ານ."})
+        return res.json({msg: "ດຳເນີນການສຳເຫຼັດ! ກະລຸນາກວດເບິ່ງ ອີເມວ ຂອງທ່ານ."})
       }
 
     } catch (err: any) {
@@ -271,9 +271,9 @@ const loginUser = async (user: IUser, password: string, res: Response) => {
   const isMatch = await bcrypt.compare(password, user.password)
 
   if(!isMatch) {
-    let msgError = user.type === 'register' 
-      ? 'Password is incorrect.' 
-      : `Password is incorrect. This account login with ${user.type}`
+    let msgError = user.type === 'ສະໝັກສະມາຊິກ' 
+      ? 'ລະຫັດຜ່ານບໍ່ຖືກຕ້ອງ.' 
+      : `ລະຫັດຜ່ານບໍ່ຖືກຕ້ອງ. ບັນຊີນີ້ເຂົ້າສູ່ລະບົບດ້ວຍ ${user.type}`
 
     return res.status(400).json({ msg: msgError })
   }
@@ -286,7 +286,7 @@ const loginUser = async (user: IUser, password: string, res: Response) => {
   })
 
   res.json({
-    msg: 'Login Success!',
+    msg: 'ເຂົ້າສູ່ລະບົບສຳເຫຼັດ!',
     access_token,
     user: { ...user._doc, password: '' }
   })
@@ -303,7 +303,7 @@ const registerUser = async (user: IUserParams, res: Response) => {
   await newUser.save()
 
   res.json({
-    msg: 'Login Success!',
+    msg: 'ເຂົ້າສູ່ລະບົບສຳເຫຼັດ!',
     access_token,
     user: { ...newUser._doc, password: '' }
   })
