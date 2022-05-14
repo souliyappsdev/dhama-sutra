@@ -1,313 +1,338 @@
-import { Request, Response } from 'express'
-import Users from '../models/userModel'
-import bcrypt from 'bcrypt'
-import jwt from 'jsonwebtoken'
-import { generateActiveToken, generateAccessToken, generateRefreshToken } from '../config/generateToken'
-import sendMail from '../config/sendMail'
-import { validateEmail, validPhone } from '../middleware/vaild'
-import { sendSms, smsOTP, smsVerify } from '../config/sendSMS'
-import { IDecodedToken, IUser, IGgPayload, IUserParams, IReqAuth } from '../config/interface'
+import { Request, Response } from "express";
+import Users from "../models/userModel";
+import bcrypt from "bcrypt";
+import jwt from "jsonwebtoken";
+import {
+  generateActiveToken,
+  generateAccessToken,
+  generateRefreshToken,
+} from "../config/generateToken";
+import sendMail from "../config/sendMail";
+import { validateEmail, validPhone } from "../middleware/vaild";
+import { sendSms, smsOTP, smsVerify } from "../config/sendSMS";
+import {
+  IDecodedToken,
+  IUser,
+  IGgPayload,
+  IUserParams,
+  IReqAuth,
+} from "../config/interface";
 
-import { OAuth2Client } from 'google-auth-library'
-import fetch from 'node-fetch'
+import { OAuth2Client } from "google-auth-library";
+import fetch from "node-fetch";
 
-
-const client = new OAuth2Client(`${process.env.MAIL_CLIENT_ID}`)
-const CLIENT_URL = `${process.env.BASE_URL}`
+const client = new OAuth2Client(`${process.env.MAIL_CLIENT_ID}`);
+const CLIENT_URL = `${process.env.BASE_URL}`;
 
 const authCtrl = {
-  register: async(req: Request, res: Response) => {
+  register: async (req: Request, res: Response) => {
     try {
-      const { name, account, password } = req.body
+      const { name, account, password } = req.body;
 
-      const user = await Users.findOne({account})
-      if(user) return res.status(400).json({msg: 'ອີເມວມີຢູ່ໃນລະບົບເເລ້ວ.'})
+      const user = await Users.findOne({ account });
+      if (user) return res.status(400).json({ msg: "ອີເມວມີຢູ່ໃນລະບົບເເລ້ວ." });
 
-      const passwordHash = await bcrypt.hash(password, 12)
+      const passwordHash = await bcrypt.hash(password, 12);
 
-      const newUser = { name, account, password: passwordHash }
+      const newUser = { name, account, password: passwordHash };
 
-      const active_token = generateActiveToken({newUser})
+      const active_token = generateActiveToken({ newUser });
 
-      const url = `${CLIENT_URL}/active/${active_token}`
+      const url = `${CLIENT_URL}/active/${active_token}`;
 
-      if(validateEmail(account)){
-        sendMail(account, url, "ກະລຸນາຢືນຢັນອີເມວຂອງທ່ານ.")
-        return res.json({ msg: "ການດຳເນີນງານສຳເຫຼັດ! ກະລຸນາກວດເບິ່ງອີເມວຂອງທ່ານ." })
-
-      }else if(validPhone(account)){
-        sendSms(account, url, "Verify your phone number")
-        return res.json({ msg: "Success! Please check phone." })
+      if (validateEmail(account)) {
+        sendMail(account, url, "ກະລຸນາຢືນຢັນອີເມວຂອງທ່ານ.");
+        return res.json({
+          msg: "ການດຳເນີນງານສຳເຫຼັດ! ກະລຸນາກວດເບິ່ງອີເມວຂອງທ່ານ.",
+        });
+      } else if (validPhone(account)) {
+        sendSms(account, url, "Verify your phone number");
+        return res.json({ msg: "Success! Please check phone." });
       }
-
     } catch (err: any) {
-      return res.status(500).json({msg: err.message})
+      return res.status(500).json({ msg: err.message });
     }
   },
-  activeAccount: async(req: Request, res: Response) => {
+  activeAccount: async (req: Request, res: Response) => {
     try {
-      const { active_token } = req.body
+      const { active_token } = req.body;
 
-      const decoded = <IDecodedToken>jwt.verify(active_token, `${process.env.ACTIVE_TOKEN_SECRET}`)
+      const decoded = <IDecodedToken>(
+        jwt.verify(active_token, `${process.env.ACTIVE_TOKEN_SECRET}`)
+      );
 
-      const { newUser } = decoded 
+      const { newUser } = decoded;
 
-      if(!newUser) return res.status(400).json({msg: "Invalid authentication."})
-      
-      const user = await Users.findOne({account: newUser.account})
-      if(user) return res.status(400).json({msg: "ບັນຊີນີ້ມີຢູ່ເເລ້ວ."})
+      if (!newUser)
+        return res.status(400).json({ msg: "Invalid authentication." });
 
-      const new_user = new Users(newUser)
+      const user = await Users.findOne({ account: newUser.account });
+      if (user) return res.status(400).json({ msg: "ບັນຊີນີ້ມີຢູ່ເເລ້ວ." });
 
-      await new_user.save()
+      const new_user = new Users(newUser);
 
-      res.json({msg: "ເປີດໃຊ້ງານສຳເລັດ!"})
+      await new_user.save();
 
+      res.json({ msg: "ເປີດໃຊ້ງານສຳເລັດ!" });
     } catch (err: any) {
-      return res.status(500).json({msg: err.message})
+      return res.status(500).json({ msg: err.message });
     }
   },
-  login: async(req: Request, res: Response) => {
+  login: async (req: Request, res: Response) => {
     try {
-      const { account, password } = req.body
+      const { account, password } = req.body;
 
-      const user = await Users.findOne({account})
-      if(!user) return res.status(400).json({msg: 'ບັນຊີນີ້ບໍ່ມີໃນລະບົບ.'})
+      const user = await Users.findOne({ account });
+      if (!user) return res.status(400).json({ msg: "ບັນຊີນີ້ບໍ່ມີໃນລະບົບ." });
 
       // if user exists
-      loginUser(user, password, res)
-
+      loginUser(user, password, res);
     } catch (err: any) {
-      return res.status(500).json({msg: err.message})
+      return res.status(500).json({ msg: err.message });
     }
   },
-  logout: async(req: IReqAuth, res: Response) => {
-    if(!req.user)
-      return res.status(400).json({msg: "Invalid Authentication."})
+  logout: async (req: IReqAuth, res: Response) => {
+    if (!req.user)
+      return res.status(400).json({ msg: "Invalid Authentication." });
 
     try {
-      res.clearCookie('refreshtoken', { path: `/api/refresh_token` })
+      res.clearCookie("refreshtoken", { path: `/api/refresh_token` });
 
-      await Users.findOneAndUpdate({_id: req.user._id}, {
-        rf_token: ''
-      })
-
-      return res.json({msg: "ອອກສູ່ລະບົບເເລ້ວ!"})
-
-    } catch (err: any) {
-      return res.status(500).json({msg: err.message})
-    }
-  },
-  refreshToken: async(req: Request, res: Response) => {
-    try {
-      const rf_token = req.cookies.refreshtoken
-      if(!rf_token) return res.status(400).json({msg: "ກະລຸນາເຂົ້າສູ່ລະບົບ!"})
-
-      const decoded = <IDecodedToken>jwt.verify(rf_token, `${process.env.REFRESH_TOKEN_SECRET}`)
-      if(!decoded.id) return res.status(400).json({msg: "Please login now!"})
-
-      const user = await Users.findById(decoded.id).select("-password +rf_token")
-      if(!user) return res.status(400).json({msg: "ບັນຊີນີ້ບໍ່ມີຢູ່ໃນລະບົບ."})
-
-      if(rf_token !== user.rf_token)
-        return res.status(400).json({msg: "ກະລຸນາເຂົ້າສູ່ລະບົບ!"})
-
-      const access_token = generateAccessToken({id: user._id})
-      const refresh_token = generateRefreshToken({id: user._id}, res)
-
-      await Users.findOneAndUpdate({_id: user._id}, {
-        rf_token: refresh_token
-      })
-
-      res.json({ access_token, user })
-      
-    } catch (err: any) {
-      return res.status(500).json({msg: err.message})
-    }
-  },
-  googleLogin: async(req: Request, res: Response) => {
-    try {
-      const { id_token } = req.body
-      const verify = await client.verifyIdToken({
-        idToken: id_token, audience: `${process.env.MAIL_CLIENT_ID}`
-      })
-
-      const {
-        email, email_verified, name, picture
-      } = <IGgPayload>verify.getPayload()
-
-      if(!email_verified)
-        return res.status(500).json({msg: "ການຍືນຍັນລະຫັດຜ່ານລົ້ມເເຫຼວ"})
-
-      const password = email + 'ລະຫັດຜ່ານ Google ເປັນຄວາມລັບປະຈຳຕົວ'
-      const passwordHash = await bcrypt.hash(password, 12)
-
-      const user = await Users.findOne({account: email})
-
-      if(user){
-        loginUser(user, password, res)
-      }else{
-        const user = {
-          name, 
-          account: email, 
-          password: passwordHash, 
-          avatar: picture,
-          type: 'google'
+      await Users.findOneAndUpdate(
+        { _id: req.user._id },
+        {
+          rf_token: "",
         }
-        registerUser(user, res)
-      }
-      
+      );
+
+      return res.json({ msg: "ອອກສູ່ລະບົບເເລ້ວ!" });
     } catch (err: any) {
-      return res.status(500).json({msg: err.message})
+      return res.status(500).json({ msg: err.message });
     }
   },
-  facebookLogin: async(req: Request, res: Response) => {
+  refreshToken: async (req: Request, res: Response) => {
     try {
-      const { accessToken, userID } = req.body
+      const rf_token = req.cookies.refreshtoken;
+      if (!rf_token)
+        return res.status(400).json({ msg: "ກະລຸນາເຂົ້າສູ່ລະບົບ!" });
+
+      const decoded = <IDecodedToken>(
+        jwt.verify(rf_token, `${process.env.REFRESH_TOKEN_SECRET}`)
+      );
+      if (!decoded.id)
+        return res.status(400).json({ msg: "Please login now!" });
+
+      const user = await Users.findById(decoded.id).select(
+        "-password +rf_token"
+      );
+      if (!user)
+        return res.status(400).json({ msg: "ບັນຊີນີ້ບໍ່ມີຢູ່ໃນລະບົບ." });
+
+      if (rf_token !== user.rf_token)
+        return res.status(400).json({ msg: "ກະລຸນາເຂົ້າສູ່ລະບົບ!" });
+
+      const access_token = generateAccessToken({ id: user._id });
+      const refresh_token = generateRefreshToken({ id: user._id }, res);
+
+      await Users.findOneAndUpdate(
+        { _id: user._id },
+        {
+          rf_token: refresh_token,
+        }
+      );
+
+      res.json({ access_token, user });
+    } catch (err: any) {
+      return res.status(500).json({ msg: err.message });
+    }
+  },
+  googleLogin: async (req: Request, res: Response) => {
+    try {
+      const { id_token } = req.body;
+      const verify = await client.verifyIdToken({
+        idToken: id_token,
+        audience: `${process.env.MAIL_CLIENT_ID}`,
+      });
+
+      const { email, email_verified, name, picture } = <IGgPayload>(
+        verify.getPayload()
+      );
+
+      if (!email_verified)
+        return res.status(500).json({ msg: "ການຍືນຍັນລະຫັດຜ່ານລົ້ມເເຫຼວ" });
+
+      const password = email + "ລະຫັດຜ່ານ Google ເປັນຄວາມລັບປະຈຳຕົວ";
+      const passwordHash = await bcrypt.hash(password, 12);
+
+      const user = await Users.findOne({ account: email });
+
+      if (user) {
+        loginUser(user, password, res);
+      } else {
+        const user = {
+          name,
+          account: email,
+          password: passwordHash,
+          avatar: picture,
+          type: "google",
+        };
+        registerUser(user, res);
+      }
+    } catch (err: any) {
+      return res.status(500).json({ msg: err.message });
+    }
+  },
+  facebookLogin: async (req: Request, res: Response) => {
+    try {
+      const { accessToken, userID } = req.body;
 
       const URL = `
         https://graph.facebook.com/v3.0/${userID}/?fields=id,name,email,picture&access_token=${accessToken}
-      `
+      `;
 
       const data = await fetch(URL)
-      .then(res => res.json())
-      .then(res => { return res })
+        .then((res) => res.json())
+        .then((res) => {
+          return res;
+        });
 
-      const { email, name, picture } = data
+      const { email, name, picture } = data;
 
-      const password = email + 'your facebook secrect password'
-      const passwordHash = await bcrypt.hash(password, 12)
+      const password = email + "your facebook secrect password";
+      const passwordHash = await bcrypt.hash(password, 12);
 
-      const user = await Users.findOne({account: email})
+      const user = await Users.findOne({ account: email });
 
-      if(user){
-        loginUser(user, password, res)
-      }else{
+      if (user) {
+        loginUser(user, password, res);
+      } else {
         const user = {
-          name, 
-          account: email, 
-          password: passwordHash, 
+          name,
+          account: email,
+          password: passwordHash,
           avatar: picture.data.url,
-          type: 'facebook'
-        }
-        registerUser(user, res)
-      } 
-      
-    } catch (err: any) {
-      return res.status(500).json({msg: err.message})
-    }
-  },
-  loginSMS: async(req: Request, res: Response) => {
-    try {
-      const { phone } = req.body
-      const data = await smsOTP(phone, 'sms')
-      res.json(data)
-    } catch (err: any) {
-      return res.status(500).json({msg: err.message})
-    }
-  },
-  smsVerify: async(req: Request, res: Response) => {
-    try {
-      const { phone, code } = req.body
-
-      const data = await smsVerify(phone, code)
-      if(!data?.valid) return res.status(400).json({msg: "Invalid Authentication."})
-
-      const password = phone + 'your phone secrect password'
-      const passwordHash = await bcrypt.hash(password, 12)
-
-      const user = await Users.findOne({account: phone})
-
-      if(user){
-        loginUser(user, password, res)
-      }else{
-        const user = {
-          name: phone, 
-          account: phone, 
-          password: passwordHash, 
-          type: 'sms'
-        }
-        registerUser(user, res)
-      } 
-
-    } catch (err: any) {
-      return res.status(500).json({msg: err.message})
-    }
-  },
-  forgotPassword: async(req: Request, res: Response) => {
-    try {
-      const { account } = req.body
-
-      const user = await Users.findOne({account})
-      if(!user)
-        return res.status(400).json({msg: 'ບັນຊີນີ້ບໍ່ມີຢູ່ໃນລະບົບ.'})
-
-      if(user.type !== 'register')
-        return res.status(400).json({
-          msg: `ບັນຊີນີ້ເຂົ້າສູ່ລະບົບດ້ວຍ ${user.type} ບໍ່ສາມາດໃຊ້ງານຜ່ານໄດ້.`
-        })
-
-      const access_token = generateAccessToken({id: user._id})
-
-      const url = `${CLIENT_URL}/reset_password/${access_token}`
-
-      if(validPhone(account)){
-        sendSms(account, url, "ລືມລະຫັດຜ່ານ?")
-        return res.json({msg: "ດຳເນີນການສຳເຫຼັດ! ກະລຸນາກວດເບິ່ງ ເບີໂທລະສັບ ຂອງທ່ານ."})
-
-      }else if(validateEmail(account)){
-        sendMail(account, url, "ລືມລະຫັດຜ່ານ?")
-        return res.json({msg: "ດຳເນີນການສຳເຫຼັດ! ກະລຸນາກວດເບິ່ງ ອີເມວ ຂອງທ່ານ."})
+          type: "facebook",
+        };
+        registerUser(user, res);
       }
-
     } catch (err: any) {
-      return res.status(500).json({msg: err.message})
+      return res.status(500).json({ msg: err.message });
     }
   },
-}
+  loginSMS: async (req: Request, res: Response) => {
+    try {
+      const { phone } = req.body;
+      const data = await smsOTP(phone, "sms");
+      res.json(data);
+    } catch (err: any) {
+      return res.status(500).json({ msg: err.message });
+    }
+  },
+  smsVerify: async (req: Request, res: Response) => {
+    try {
+      const { phone, code } = req.body;
 
+      const data = await smsVerify(phone, code);
+      if (!data?.valid)
+        return res.status(400).json({ msg: "Invalid Authentication." });
+
+      const password = phone + "your phone secrect password";
+      const passwordHash = await bcrypt.hash(password, 12);
+
+      const user = await Users.findOne({ account: phone });
+
+      if (user) {
+        loginUser(user, password, res);
+      } else {
+        const user = {
+          name: phone,
+          account: phone,
+          password: passwordHash,
+          type: "sms",
+        };
+        registerUser(user, res);
+      }
+    } catch (err: any) {
+      return res.status(500).json({ msg: err.message });
+    }
+  },
+  forgotPassword: async (req: Request, res: Response) => {
+    try {
+      const { account } = req.body;
+
+      const user = await Users.findOne({ account });
+      if (!user)
+        return res.status(400).json({ msg: "ບັນຊີນີ້ບໍ່ມີຢູ່ໃນລະບົບ." });
+
+      if (user.type !== "register")
+        return res.status(400).json({
+          msg: `ບັນຊີນີ້ເຂົ້າສູ່ລະບົບດ້ວຍ ${user.type} ບໍ່ສາມາດໃຊ້ງານຜ່ານໄດ້.`,
+        });
+
+      const access_token = generateAccessToken({ id: user._id });
+
+      const url = `${CLIENT_URL}/reset_password/${access_token}`;
+
+      if (validPhone(account)) {
+        sendSms(account, url, "ລືມລະຫັດຜ່ານ?");
+        return res.json({
+          msg: "ດຳເນີນການສຳເຫຼັດ! ກະລຸນາກວດເບິ່ງ ເບີໂທລະສັບ ຂອງທ່ານ.",
+        });
+      } else if (validateEmail(account)) {
+        sendMail(account, url, "ລືມລະຫັດຜ່ານ?");
+        return res.json({
+          msg: "ດຳເນີນການສຳເຫຼັດ! ກະລຸນາກວດເບິ່ງ ອີເມວ ຂອງທ່ານ.",
+        });
+      }
+    } catch (err: any) {
+      return res.status(500).json({ msg: err.message });
+    }
+  },
+};
 
 const loginUser = async (user: IUser, password: string, res: Response) => {
-  const isMatch = await bcrypt.compare(password, user.password)
+  const isMatch = await bcrypt.compare(password, user.password);
 
-  if(!isMatch) {
-    let msgError = user.type === 'ສະໝັກສະມາຊິກ' 
-      ? 'ລະຫັດຜ່ານບໍ່ຖືກຕ້ອງ.' 
-      : `ລະຫັດຜ່ານບໍ່ຖືກຕ້ອງ. ບັນຊີນີ້ເຂົ້າສູ່ລະບົບດ້ວຍ ${user.type}`
+  if (!isMatch) {
+    let msgError =
+      user.type === "ສະໝັກສະມາຊິກ"
+        ? "ລະຫັດຜ່ານບໍ່ຖືກຕ້ອງ."
+        : `ລະຫັດຜ່ານບໍ່ຖືກຕ້ອງ. ບັນຊີນີ້ເຂົ້າສູ່ລະບົບດ້ວຍ ${user.type}`;
 
-    return res.status(400).json({ msg: msgError })
+    return res.status(400).json({ msg: msgError });
   }
 
-  const access_token = generateAccessToken({id: user._id})
-  const refresh_token = generateRefreshToken({id: user._id}, res)
+  const access_token = generateAccessToken({ id: user._id });
+  const refresh_token = generateRefreshToken({ id: user._id }, res);
 
-  await Users.findOneAndUpdate({_id: user._id}, {
-    rf_token:refresh_token
-  })
+  await Users.findOneAndUpdate(
+    { _id: user._id },
+    {
+      rf_token: refresh_token,
+    }
+  );
 
   res.json({
-    msg: 'ເຂົ້າສູ່ລະບົບສຳເຫຼັດ!',
+    msg: "ເຂົ້າສູ່ລະບົບສຳເຫຼັດ!",
     access_token,
-    user: { ...user._doc, password: '' }
-  })
-
-}
+    user: { ...user._doc, password: "" },
+  });
+};
 
 const registerUser = async (user: IUserParams, res: Response) => {
-  const newUser = new Users(user)
+  const newUser = new Users(user);
 
-  const access_token = generateAccessToken({id: newUser._id})
-  const refresh_token = generateRefreshToken({id: newUser._id}, res)
+  const access_token = generateAccessToken({ id: newUser._id });
+  const refresh_token = generateRefreshToken({ id: newUser._id }, res);
 
-  newUser.rf_token = refresh_token
-  await newUser.save()
+  newUser.rf_token = refresh_token;
+  await newUser.save();
 
   res.json({
-    msg: 'ເຂົ້າສູ່ລະບົບສຳເຫຼັດ!',
+    msg: "ເຂົ້າສູ່ລະບົບສຳເຫຼັດ!",
     access_token,
-    user: { ...newUser._doc, password: '' }
-  })
-
-}
+    user: { ...newUser._doc, password: "" },
+  });
+};
 
 export default authCtrl;

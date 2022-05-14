@@ -1,6 +1,6 @@
 git init
 git add .
-git commit -m "pnpm run dev"
+git commit -m "pnpm run"
 git branch -M main
 git remote add origin https://github.com/SouliyaPPS/dhama-sutra.git
 git push -u origin main -f
