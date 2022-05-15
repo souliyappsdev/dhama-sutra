@@ -33,7 +33,11 @@ const blogCtrl = {
       res.json({
         ...newBlog._doc,
         user: req.user,
+        msg: "ເພີ້ມຂໍ້ມູນສຳເລັດ!",
+        newBlog,
       });
+
+      res.json({ msg: "ເພີ້ມຂໍ້ມູນສຳເລັດ!", newBlog });
     } catch (err: any) {
       return res.status(500).json({ msg: err.message });
     }
@@ -258,7 +262,7 @@ const blogCtrl = {
       if (!blog)
         return res.status(400).json({ msg: "Invalid Authentication." });
 
-      res.json({ msg: "Update Success!", blog });
+      res.json({ msg: "ເເກ້ໄຂສຳເລັດ!", blog });
     } catch (err: any) {
       return res.status(500).json({ msg: err.message });
     }

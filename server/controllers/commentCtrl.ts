@@ -206,7 +206,7 @@ const commentCtrl = {
 
       io.to(`${data.blog_id}`).emit('updateComment', data)
 
-      return res.json({msg: "Update Success!"})
+      return res.json({msg: "ເເກ້ໄຂສຳເລັດ!"})
       
     } catch (err: any) {
       return res.status(500).json({msg: err.message})

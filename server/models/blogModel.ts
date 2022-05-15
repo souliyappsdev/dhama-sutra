@@ -21,6 +21,7 @@ const blogSchema = new mongoose.Schema({
     trim: true,
     // minLength: 50,
     // maxLength: 200
+    
   },
   thumbnail:{
     type: String,

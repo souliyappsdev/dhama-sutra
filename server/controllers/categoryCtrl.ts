@@ -49,7 +49,7 @@ const categoryCtrl = {
         _id: req.params.id
       }, { name: (req.body.name).toLowerCase() })
 
-      res.json({ msg: "Update Success!" })
+      res.json({ msg: "ເເກ້ໄຂສຳເລັດ!" })
     } catch (err: any) {
       return res.status(500).json({ msg: err.message })
     }
