@@ -292,7 +292,7 @@ const blogCtrl = {
           $search: {
             index: "searchTitle",
             autocomplete: {
-              query: `${req.query.content}`,
+              query: `${req.query.content || req.query.title || req.query.description}`,
               path: "content",
             },
           },
